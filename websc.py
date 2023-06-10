@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+import subprocess
 
 def check_status_code(url):
     try:
@@ -13,7 +14,7 @@ def check_status_code(url):
         else:
             print(f"Terjadi kesalahan, kode status: {status_code}")
     except requests.exceptions.RequestException as e:
-        print("Terjadi kesalahan saat memeriksa status code:")
+        print("Terjadi kesalahan saat memeriksa kode status:")
         print(e)
 
 def check_security_headers(url):
@@ -23,16 +24,16 @@ def check_security_headers(url):
         headers = response.headers
 
         if 'strict-transport-security' in headers:
-            print("HSTS header ditemukan")
+            print("Header HSTS ditemukan")
             print(f"Nilai HSTS: {headers['strict-transport-security']}")
         else:
-            print("HSTS header tidak ditemukan")
+            print("Header HSTS tidak ditemukan")
 
         if 'x-xss-protection' in headers:
-            print("X-XSS-Protection header ditemukan")
+            print("Header X-XSS-Protection ditemukan")
             print(f"Nilai X-XSS-Protection: {headers['x-xss-protection']}")
         else:
-            print("X-XSS-Protection header tidak ditemukan")
+            print("Header X-XSS-Protection tidak ditemukan")
     except requests.exceptions.RequestException as e:
         print("Terjadi kesalahan saat memeriksa header keamanan:")
         print(e)
@@ -53,23 +54,16 @@ def check_robots_txt(url):
         print("Terjadi kesalahan saat memeriksa file robots.txt:")
         print(e)
 
-# Fungsi untuk memeriksa adanya injeksi kode
 def check_injection(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
         html = response.text
 
-        if '<script>' in html:
-            print("Potensi injeksi kode ditemukan")
-        else:
-            print("Tidak ditemukan potensi injeksi kode")
-
-        # Contoh pemeriksaan injeksi SQL dengan menggunakan parameter binding/prepared statement
-        sql_query = "SELECT * FROM users WHERE username = ?"
-        username = "admin' OR '1'='1"
-        results = execute_sql_query(sql_query, username)
-        print("Hasil query SQL:", results)
+        # Menggunakan library sqlmap untuk memeriksa injeksi SQL
+        cmd = f"sqlmap -u {url} --batch --risk=3 --level=5"
+        result = subprocess.getoutput(cmd)
+        print(result)
     except requests.exceptions.RequestException as e:
         print("Terjadi kesalahan saat memeriksa potensi injeksi:")
         print(e)
@@ -92,15 +86,10 @@ def check_sensitive_files(url):
         print("Terjadi kesalahan saat memeriksa file dan folder sensitif:")
         print(e)
 
-def execute_sql_query(query, params):
-    # Melakukan eksekusi query SQL dengan menggunakan parameter binding/prepared statement
-    # Code untuk eksekusi query SQL di sini
-    pass
-
 def run_security_check():
     url = input("Masukkan URL yang ingin diperiksa: ")
 
-    print("\nMemeriksa status code:")
+    print("\nMemeriksa kode status:")
     check_status_code(url)
 
     print("\nMemeriksa header keamanan:")
@@ -114,4 +103,5 @@ def run_security_check():
 
     print("\nMemeriksa file dan folder sensitif:")
     check_sensitive_files(url)
+
 run_security_check()
